@@ -1,0 +1,260 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "../interfaces/IERC20.sol";
+import "../interfaces/IZenLend.sol";
+
+/**
+ * @title ZenLendCore
+ * @dev Core lending functionality for ZenLend protocol
+ */
+contract ZenLendCore is IZenLend, ReentrancyGuard, Ownable {
+
+    // Loan structure
+    struct Loan {
+        uint256 id;
+        address borrower;
+        address borrowedAsset;
+        uint256 borrowedAmount;
+        uint256 borrowedAt;
+        uint256 interestRate;
+        address collateralAsset;
+        uint256 collateralAmount;
+        uint256 collateralizationRatio;
+        bool isActive;
+        bool isLiquidated;
+    }
+
+    // User balances
+    mapping(address => mapping(address => uint256)) public userDeposits; // user => asset => amount
+    mapping(uint256 => Loan) public loans; // loanId => Loan
+    mapping(address => bool) public supportedAssets; // asset => isSupported
+    mapping(address => uint256) public assetUtilization; // asset => utilization rate (basis points)
+    
+    uint256 public loanCounter;
+    uint256 public constant MIN_COLLATERALIZATION_RATIO = 15000; // 150% in basis points
+    uint256 public constant LIQUIDATION_THRESHOLD = 12000; // 120% in basis points
+    uint256 public constant BASIS_POINTS = 10000;
+    
+    // Interest rates (basis points per year)
+    mapping(address => uint256) public assetInterestRates; // asset => interest rate
+    
+    event Deposit(address indexed user, address indexed asset, uint256 amount, uint256 timestamp);
+    event Borrow(address indexed user, address indexed asset, uint256 amount, uint256 loanId, uint256 timestamp);
+    event Repay(address indexed user, uint256 indexed loanId, uint256 amount, uint256 timestamp);
+    event Liquidation(address indexed liquidator, uint256 indexed loanId, uint256 collateralSeized, uint256 timestamp);
+    event MortgageCreated(address indexed user, uint256 indexed mortgageId, address asset, uint256 amount, uint256 timestamp);
+    event BTCRedeemed(uint256 indexed mortgageId, bytes btcAddress, uint256 timestamp);
+    
+    constructor(address _owner) Ownable(_owner) {
+        loanCounter = 0;
+    }
+
+    /**
+     * @dev Deposit assets to the lending pool
+     */
+    function deposit(address asset, uint256 amount) external override nonReentrant returns (uint256) {
+        require(supportedAssets[asset], "Asset not supported");
+        require(amount > 0, "Amount must be greater than 0");
+        
+        IERC20 token = IERC20(asset);
+        require(token.transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        
+        userDeposits[msg.sender][asset] += amount;
+        
+        emit Deposit(msg.sender, asset, amount, block.timestamp);
+        return amount;
+    }
+
+    /**
+     * @dev Borrow assets using collateral
+     */
+    function borrow(
+        address asset,
+        uint256 amount,
+        address collateralAsset,
+        uint256 collateralAmount
+    ) external override nonReentrant returns (uint256) {
+        require(supportedAssets[asset], "Borrowed asset not supported");
+        require(supportedAssets[collateralAsset], "Collateral asset not supported");
+        require(amount > 0, "Amount must be greater than 0");
+        
+        // Transfer collateral
+        IERC20 collateralToken = IERC20(collateralAsset);
+        require(collateralToken.transferFrom(msg.sender, address(this), collateralAmount), "Collateral transfer failed");
+        
+        // Calculate collateralization ratio
+        uint256 collateralValue = getAssetValue(collateralAsset, collateralAmount);
+        uint256 borrowValue = getAssetValue(asset, amount);
+        uint256 collateralizationRatio = (collateralValue * BASIS_POINTS) / borrowValue;
+        
+        require(collateralizationRatio >= MIN_COLLATERALIZATION_RATIO, "Insufficient collateral");
+        
+        // Create loan
+        loanCounter += 1;
+        loans[loanCounter] = Loan({
+            id: loanCounter,
+            borrower: msg.sender,
+            borrowedAsset: asset,
+            borrowedAmount: amount,
+            borrowedAt: block.timestamp,
+            interestRate: assetInterestRates[asset],
+            collateralAsset: collateralAsset,
+            collateralAmount: collateralAmount,
+            collateralizationRatio: collateralizationRatio,
+            isActive: true,
+            isLiquidated: false
+        });
+        
+        // Transfer borrowed asset
+        IERC20 token = IERC20(asset);
+        require(token.transfer(msg.sender, amount), "Borrow transfer failed");
+        
+        emit Borrow(msg.sender, asset, amount, loanCounter, block.timestamp);
+        return loanCounter;
+    }
+
+    /**
+     * @dev Repay a loan
+     */
+    function repay(uint256 loanId, uint256 amount) external override nonReentrant returns (bool) {
+        Loan storage loan = loans[loanId];
+        require(loan.isActive, "Loan not active");
+        require(loan.borrower == msg.sender, "Not the borrower");
+        require(!loan.isLiquidated, "Loan already liquidated");
+        require(amount > 0, "Amount must be greater than 0");
+        
+        IERC20 token = IERC20(loan.borrowedAsset);
+        require(token.transferFrom(msg.sender, address(this), amount), "Repay transfer failed");
+        
+        // Calculate interest
+        uint256 interest = calculateInterest(loanId);
+        uint256 totalOwed = loan.borrowedAmount + interest;
+        
+        if (amount >= totalOwed) {
+            // Full repayment - return collateral
+            IERC20 collateralToken = IERC20(loan.collateralAsset);
+            collateralToken.transfer(loan.borrower, loan.collateralAmount);
+            loan.isActive = false;
+        }
+        
+        emit Repay(msg.sender, loanId, amount, block.timestamp);
+        return true;
+    }
+
+    /**
+     * @dev Withdraw deposited assets
+     */
+    function withdraw(address asset, uint256 amount) external override nonReentrant returns (bool) {
+        require(userDeposits[msg.sender][asset] >= amount, "Insufficient balance");
+        
+        userDeposits[msg.sender][asset] -= amount;
+        
+        IERC20 token = IERC20(asset);
+        require(token.transfer(msg.sender, amount), "Withdraw transfer failed");
+        
+        return true;
+    }
+
+    /**
+     * @dev Liquidate an undercollateralized loan
+     */
+    function liquidate(uint256 loanId) external override nonReentrant returns (bool) {
+        Loan storage loan = loans[loanId];
+        require(loan.isActive, "Loan not active");
+        require(!loan.isLiquidated, "Already liquidated");
+        
+        // Check if loan is liquidatable
+        uint256 currentCollateralValue = getAssetValue(loan.collateralAsset, loan.collateralAmount);
+        uint256 currentDebtValue = calculateTotalDebt(loanId);
+        uint256 currentRatio = (currentCollateralValue * BASIS_POINTS) / currentDebtValue;
+        
+        require(currentRatio < LIQUIDATION_THRESHOLD, "Loan not liquidatable");
+        
+        // Liquidate - transfer collateral to liquidator
+        IERC20 collateralToken = IERC20(loan.collateralAsset);
+        collateralToken.transfer(msg.sender, loan.collateralAmount);
+        
+        loan.isLiquidated = true;
+        loan.isActive = false;
+        
+        emit Liquidation(msg.sender, loanId, loan.collateralAmount, block.timestamp);
+        return true;
+    }
+
+    // Placeholder functions for advanced features
+    function createMortgage(address asset, uint256 amount, bytes calldata btcProof) external override returns (uint256) {
+        // TODO: Implement BTC-redeemable mortgage
+        revert("Not yet implemented");
+    }
+
+    function redeemBTC(uint256 mortgageId, bytes calldata redemptionProof) external override returns (bool) {
+        // TODO: Implement BTC redemption
+        revert("Not yet implemented");
+    }
+
+    function createVault(address collateralAsset, uint256 collateralAmount) external override returns (uint256) {
+        // TODO: Implement validator vault creation
+        revert("Not yet implemented");
+    }
+
+    function stakeToVault(uint256 vaultId, uint256 stakeAmount) external override returns (bool) {
+        // TODO: Implement vault staking
+        revert("Not yet implemented");
+    }
+
+    function mintZBTC(uint256 vaultId, uint256 amount) external override returns (bool) {
+        // TODO: Implement zBTC minting
+        revert("Not yet implemented");
+    }
+
+    function crossChainLiquidate(uint256 loanId, uint256 chainId) external override returns (bool) {
+        // TODO: Implement cross-chain liquidation
+        revert("Not yet implemented");
+    }
+
+    function depositToYieldAggregator(address asset, uint256 amount) external override returns (uint256) {
+        // TODO: Implement yield aggregator
+        revert("Not yet implemented");
+    }
+
+    function mintDebtShareToken(uint256 loanId, uint256 amount) external override returns (uint256) {
+        // TODO: Implement debt share tokens
+        revert("Not yet implemented");
+    }
+
+    // Admin functions
+    function addSupportedAsset(address asset, uint256 interestRate) external onlyOwner {
+        supportedAssets[asset] = true;
+        assetInterestRates[asset] = interestRate;
+    }
+
+    function removeSupportedAsset(address asset) external onlyOwner {
+        supportedAssets[asset] = false;
+    }
+
+    function setInterestRate(address asset, uint256 newRate) external onlyOwner {
+        assetInterestRates[asset] = newRate;
+    }
+
+    // Internal helper functions
+    function getAssetValue(address asset, uint256 amount) internal view returns (uint256) {
+        // TODO: Implement oracle-based price fetching
+        // Placeholder: assume 1:1 for same asset
+        return amount;
+    }
+
+    function calculateInterest(uint256 loanId) internal view returns (uint256) {
+        Loan memory loan = loans[loanId];
+        uint256 timeElapsed = block.timestamp - loan.borrowedAt;
+        uint256 yearsElapsed = timeElapsed / 365 days;
+        return (loan.borrowedAmount * loan.interestRate * yearsElapsed) / BASIS_POINTS;
+    }
+
+    function calculateTotalDebt(uint256 loanId) internal view returns (uint256) {
+        Loan memory loan = loans[loanId];
+        return loan.borrowedAmount + calculateInterest(loanId);
+    }
+}

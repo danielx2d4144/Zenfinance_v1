@@ -1,0 +1,44 @@
+specVersion: 0.0.4
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: ZenFinancePool
+    network: zenchain-testnet
+    source:
+      address: "0x72395F14f50c7D9F5ACCA3a7D9658a9808457f7c"
+      abi: ZenFinancePool
+      startBlock: 1000000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Asset
+        - AssetAPYSnapshot
+        - User
+        - UserSupply
+        - UserBorrow
+        - Transaction
+        - MarketSnapshot
+      abis:
+        - name: ZenFinancePool
+          file: ./abis/ZenFinancePool.json
+        - name: InterestRateModel
+          file: ./abis/InterestRateModel.json
+        - name: Oracle
+          file: ./abis/Oracle.json
+      eventHandlers:
+        - event: Supply(indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleSupply
+        - event: Withdraw(indexed address,indexed address,uint256,uint256)
+          handler: handleWithdraw
+        - event: Borrow(indexed address,indexed address,uint256,uint256,uint256)
+          handler: handleBorrow
+        - event: Repay(indexed address,indexed address,uint256,uint256)
+          handler: handleRepay
+        - event: Liquidation(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleLiquidation
+        - event: InterestAccrued(indexed address,uint256,uint256,uint256)
+          handler: handleInterestAccrued
+      file: ./src/mapping.ts

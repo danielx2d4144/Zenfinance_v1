@@ -1,0 +1,82 @@
+# ZenFinance Subgraph Schema
+
+type Asset @entity {
+  id: ID! # Asset address
+  symbol: String!
+  name: String!
+  decimals: Int!
+  totalSupplied: BigInt!
+  totalBorrowed: BigInt!
+  supplyAPY: BigDecimal!
+  borrowAPY: BigDecimal!
+  utilization: BigDecimal!
+  lastUpdateTimestamp: BigInt!
+  lastUpdateBlock: BigInt!
+  historicalAPY: [AssetAPYSnapshot!]! @derivedFrom(field: "asset")
+}
+
+type AssetAPYSnapshot @entity {
+  id: ID! # asset-timestamp
+  asset: Asset!
+  supplyAPY: BigDecimal!
+  borrowAPY: BigDecimal!
+  utilization: BigDecimal!
+  totalSupplied: BigInt!
+  totalBorrowed: BigInt!
+  timestamp: BigInt!
+  block: BigInt!
+}
+
+type User @entity {
+  id: ID! # User address
+  supplies: [UserSupply!]! @derivedFrom(field: "user")
+  borrows: [UserBorrow!]! @derivedFrom(field: "user")
+  transactions: [Transaction!]! @derivedFrom(field: "user")
+}
+
+type UserSupply @entity {
+  id: ID! # user-asset
+  user: User!
+  asset: Asset!
+  amount: BigInt!
+  aTokenBalance: BigInt!
+  lastUpdateTimestamp: BigInt!
+  lastUpdateBlock: BigInt!
+}
+
+type UserBorrow @entity {
+  id: ID! # user-asset
+  user: User!
+  asset: Asset!
+  amount: BigInt!
+  interestAccrued: BigInt!
+  lastUpdateTimestamp: BigInt!
+  lastUpdateBlock: BigInt!
+}
+
+type Transaction @entity {
+  id: ID! # tx hash - log index
+  user: User!
+  asset: Asset!
+  type: TransactionType!
+  amount: BigInt!
+  timestamp: BigInt!
+  block: BigInt!
+  txHash: Bytes!
+}
+
+enum TransactionType {
+  SUPPLY
+  WITHDRAW
+  BORROW
+  REPAY
+  LIQUIDATION
+}
+
+type MarketSnapshot @entity {
+  id: ID! # timestamp
+  totalValueLocked: BigInt!
+  totalBorrowed: BigInt!
+  timestamp: BigInt!
+  block: BigInt!
+}

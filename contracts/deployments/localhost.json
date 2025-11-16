@@ -1,0 +1,77 @@
+{
+  "network": "localhost",
+  "chainId": 1337,
+  "deploymentDate": "2025-01-07",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "contracts": {
+    "InterestRateModel": {
+      "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "description": "Kinked interest rate model for calculating borrow and supply rates"
+    },
+    "Oracle": {
+      "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      "description": "Price oracle for fetching asset prices from DEX pairs"
+    },
+    "AssetRegistry": {
+      "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "description": "Asset registry for managing supported assets and configurations"
+    },
+    "ZenFinancePool": {
+      "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
+      "description": "Main lending pool contract for supply, borrow, withdraw, and repay"
+    },
+    "aTokens": {
+      "aWBTC": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "aUSDC": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+      "aUSDT": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+      "aZTC": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+      "aZFI": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "aZY": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+      "aDUM1": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      "aDUM2": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"
+    }
+  },
+  "assets": {
+    "WBTC": {
+      "address": "0xE267b9cC76a614b8E178b4552e9983d1F19CEB05",
+      "aToken": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "name": "Zipped BTC"
+    },
+    "USDC": {
+      "address": "0x44D25859F79787fF937ec1305Dbf0866d6064E21",
+      "aToken": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+      "name": "USD Coin"
+    },
+    "USDT": {
+      "address": "0x2A0B66dEb779EF7DF45b064eF5cee2B1bF6E5DD5",
+      "aToken": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+      "name": "Tether"
+    },
+    "ZTC": {
+      "address": "0x0000000000000000000000000000000000000804",
+      "aToken": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+      "name": "ZenChain Token"
+    },
+    "ZFI": {
+      "address": "0x867bb07d47A3BF3d1f6835a71A2Ba639bf445DA9",
+      "aToken": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+      "name": "ZenFinance Token"
+    },
+    "ZY": {
+      "address": "0x7f7752745A56e5B09Bd8d9fE6d6C3b3477E441FF",
+      "aToken": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+      "name": "Zynft Token"
+    },
+    "DUM1": {
+      "address": "0xfEf87C98507A92ee3968c40D2ebEbBE3638D7D29",
+      "aToken": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+      "name": "DUMMY1 Token"
+    },
+    "DUM2": {
+      "address": "0xFd029224030f6227B0Eee44003B464063707b1e9",
+      "aToken": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+      "name": "DUMMY2 Token"
+    }
+  }
+}
+

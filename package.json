@@ -1,0 +1,27 @@
+{
+  "name": "zenfinance",
+  "version": "1.0.0",
+  "description": "ZenFinance - Advanced Lending DApp on ZenChain",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "contracts"
+  ],
+  "scripts": {
+    "install:all": "npm install && cd frontend && npm install && cd ../contracts && npm install",
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "test:contracts": "cd contracts && npm test",
+    "compile": "cd contracts && npm run compile",
+    "deploy": "cd contracts && npm run deploy"
+  },
+  "keywords": [
+    "defi",
+    "lending",
+    "zenchain",
+    "web3",
+    "blockchain"
+  ],
+  "author": "",
+  "license": "MIT"
+}

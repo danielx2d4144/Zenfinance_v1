@@ -1,0 +1,20 @@
+{
+  "name": "zenfinance-subgraph",
+  "version": "1.0.0",
+  "description": "ZenFinance Protocol Subgraph",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ zenfinance/zenfinance-testnet",
+    "create-local": "graph create --node http://localhost:8020/ zenfinance/zenfinance-testnet",
+    "remove-local": "graph remove --node http://localhost:8020/ zenfinance/zenfinance-testnet",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 zenfinance/zenfinance-testnet"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "^0.55.0",
+    "@graphprotocol/graph-ts": "^0.31.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,74 @@
+import { expect } from "chai";
+import { ethers } from "hardhat";
+import { ZenLendCore } from "../typechain-types";
+import { Contract } from "ethers";
+
+describe("ZenLendCore", function () {
+  let zenLend: ZenLendCore;
+  let owner: any;
+  let user1: any;
+  let user2: any;
+  let mockToken: Contract;
+
+  beforeEach(async function () {
+    [owner, user1, user2] = await ethers.getSigners();
+
+    // Deploy mock ERC20 token
+    const MockERC20 = await ethers.getContractFactory("MockERC20");
+    mockToken = await MockERC20.deploy("Test Token", "TEST", ethers.parseEther("1000000"));
+
+    // Deploy ZenLendCore
+    const ZenLendCoreFactory = await ethers.getContractFactory("ZenLendCore");
+    zenLend = await ZenLendCoreFactory.deploy(owner.address);
+
+    // Add mock token as supported asset
+    await zenLend.addSupportedAsset(await mockToken.getAddress(), 500); // 5% interest rate
+  });
+
+  describe("Deposit", function () {
+    it("Should allow users to deposit assets", async function () {
+      const amount = ethers.parseEther("100");
+      await mockToken.transfer(user1.address, amount);
+      await mockToken.connect(user1).approve(await zenLend.getAddress(), amount);
+
+      const tx = await zenLend.connect(user1).deposit(await mockToken.getAddress(), amount);
+      await expect(tx).to.emit(zenLend, "Deposit");
+
+      expect(await zenLend.userDeposits(user1.address, await mockToken.getAddress())).to.equal(amount);
+    });
+  });
+
+  describe("Borrow", function () {
+    it("Should allow users to borrow with sufficient collateral", async function () {
+      const collateralAmount = ethers.parseEther("200");
+      const borrowAmount = ethers.parseEther("100");
+
+      await mockToken.transfer(user1.address, collateralAmount);
+      await mockToken.connect(user1).approve(await zenLend.getAddress(), collateralAmount);
+
+      await expect(
+        zenLend.connect(user1).borrow(
+          await mockToken.getAddress(),
+          borrowAmount,
+          await mockToken.getAddress(),
+          collateralAmount
+        )
+      ).to.emit(zenLend, "Borrow");
+
+      const loan = await zenLend.loans(1);
+      expect(loan.borrower).to.equal(user1.address);
+      expect(loan.borrowedAmount).to.equal(borrowAmount);
+    });
+  });
+
+  describe("Liquidation", function () {
+    it("Should allow liquidation when ratio falls below threshold", async function () {
+      // Implementation will depend on price oracle integration
+      // This is a placeholder test structure
+    });
+  });
+});
+
+function anyValue() {
+  return true;
+}

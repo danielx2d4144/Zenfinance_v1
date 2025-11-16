@@ -1,0 +1,14 @@
+{
+  "zenchain-testnet": {
+    "ZenFinancePool": {
+      "address": "0x72395F14f50c7D9F5ACCA3a7D9658a9808457f7c",
+      "startBlock": 1000000
+    },
+    "Oracle": {
+      "address": "0xbECdf98b0141C52C474753ecC30a1350fE410995"
+    },
+    "InterestRateModel": {
+      "address": "0x44948BB5ACCE54302aa5e3304A00d08BFA888726"
+    }
+  }
+}
