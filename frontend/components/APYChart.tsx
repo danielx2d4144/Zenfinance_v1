@@ -1,16 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getAssetAPYHistory, formatChartData, APYSnapshot } from "@/services/graphService";
+import { getAssetAPYHistory } from "@/services/graphService";
 
 interface APYChartProps {
   assetAddress: string;
   assetSymbol: string;
 }
 
+type ChartDataPoint = { timestamp: number; value: number; date: string };
+
 export default function APYChart({ assetAddress, assetSymbol }: APYChartProps) {
   const [timeframe, setTimeframe] = useState<'30D' | '6M' | '1Y'>('30D');
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,15 +22,14 @@ export default function APYChart({ assetAddress, assetSymbol }: APYChartProps) {
         setIsLoading(true);
         setError(null);
         
-        const snapshots = await getAssetAPYHistory(assetAddress, timeframe);
+        const formatted = await getAssetAPYHistory(assetAddress, timeframe, 'supply');
         
-        if (snapshots.length === 0) {
+        if (formatted.length === 0) {
           setError("No historical data available yet");
           setChartData([]);
           return;
         }
         
-        const formatted = formatChartData(snapshots, 'supplyAPY');
         setChartData(formatted);
       } catch (err) {
         console.error('Error loading chart data:', err);

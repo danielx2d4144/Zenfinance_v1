@@ -24,7 +24,7 @@ const ORACLE_ABI = [
 export function usePriceFromOracle(symbol: string, enabled: boolean = true) {
   const assetConfig = ConfigService.getAssetConfig(symbol);
   const oracleAddress = getContractAddress("oracle");
-  const isValidOracleAddress = oracleAddress && oracleAddress !== "";
+  const isValidOracleAddress = Boolean(oracleAddress && oracleAddress !== "");
 
   const { data, isLoading, error, refetch } = useReadContract({
     address: isValidOracleAddress ? (oracleAddress as Address) : undefined,
@@ -32,7 +32,7 @@ export function usePriceFromOracle(symbol: string, enabled: boolean = true) {
     functionName: "getPrice",
     args: assetConfig?.address ? [assetConfig.address as Address] : undefined,
     query: {
-      enabled: enabled && !!assetConfig?.address && isValidOracleAddress,
+      enabled: Boolean(enabled && assetConfig?.address && isValidOracleAddress),
       refetchInterval: 30000, // Refetch every 30 seconds
     },
   });

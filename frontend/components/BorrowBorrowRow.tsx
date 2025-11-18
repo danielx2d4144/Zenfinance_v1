@@ -25,7 +25,7 @@ export default function BorrowBorrowRow({ asset, isConnected, onBorrow, onRepay 
   const decimals = tokenDecimals !== undefined ? tokenDecimals : asset.decimals;
 
   const borrowBalanceFormatted = borrowBalanceRaw
-    ? formatBalance(formatUnits(borrowBalanceRaw, decimals), undefined, asset.symbol)
+    ? formatBalance(formatUnits(borrowBalanceRaw, decimals))
     : (asset.symbol === "WBTC" ? "0.00000" : "0.00");
 
   const borrowBalanceUSD = price && borrowBalanceRaw

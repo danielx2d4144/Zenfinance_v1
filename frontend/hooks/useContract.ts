@@ -3,6 +3,7 @@
  */
 
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useEffect } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { getContractAddress, getATokenAddress } from "@/config/contracts";
 import { ConfigService } from "@/services/configService";
@@ -405,16 +406,19 @@ export function useSupply() {
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
     confirmations: 1, // Wait for 1 block confirmation
-    onSuccess: () => {
+  });
+
+  // Handle success with useEffect instead of deprecated onSuccess
+  useEffect(() => {
+    if (isSuccess) {
       // Invalidate all queries to refetch balances after successful transaction
-      // Use multiple invalidations to ensure all data refreshes
-      queryClient.invalidateQueries({ queryKey: [] }); // Invalidate all queries
+      queryClient.invalidateQueries({ queryKey: [] });
       // Also refetch immediately
       setTimeout(() => {
         queryClient.refetchQueries({ queryKey: [] });
       }, 1000);
-    },
-  });
+    }
+  }, [isSuccess, queryClient]);
 
   const supply = async (symbol: string, amount: string) => {
     const assetConfig = ConfigService.getAssetConfig(symbol);
@@ -483,15 +487,17 @@ export function useWithdraw() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
-    confirmations: 1, // Wait for 1 block confirmation
-    onSuccess: () => {
-      // Invalidate all queries to refetch balances after successful transaction
-      queryClient.invalidateQueries({ queryKey: [] }); // Invalidate all queries
+    confirmations: 1,
+  });
+
+  useEffect(() => {
+    if (isSuccess) {
+      queryClient.invalidateQueries({ queryKey: [] });
       setTimeout(() => {
         queryClient.refetchQueries({ queryKey: [] });
       }, 1000);
-    },
-  });
+    }
+  }, [isSuccess, queryClient]);
 
   const withdraw = async (symbol: string, amount: string) => {
     const assetConfig = ConfigService.getAssetConfig(symbol);
@@ -550,15 +556,17 @@ export function useBorrow() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
-    confirmations: 1, // Wait for 1 block confirmation
-    onSuccess: () => {
-      // Invalidate all queries to refetch balances after successful transaction
-      queryClient.invalidateQueries({ queryKey: [] }); // Invalidate all queries
+    confirmations: 1,
+  });
+
+  useEffect(() => {
+    if (isSuccess) {
+      queryClient.invalidateQueries({ queryKey: [] });
       setTimeout(() => {
         queryClient.refetchQueries({ queryKey: [] });
       }, 1000);
-    },
-  });
+    }
+  }, [isSuccess, queryClient]);
 
   const borrow = async (symbol: string, amount: string) => {
     const assetConfig = ConfigService.getAssetConfig(symbol);
@@ -640,15 +648,17 @@ export function useRepay() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
-    confirmations: 1, // Wait for 1 block confirmation
-    onSuccess: () => {
-      // Invalidate all queries to refetch balances after successful transaction
-      queryClient.invalidateQueries({ queryKey: [] }); // Invalidate all queries
+    confirmations: 1,
+  });
+
+  useEffect(() => {
+    if (isSuccess) {
+      queryClient.invalidateQueries({ queryKey: [] });
       setTimeout(() => {
         queryClient.refetchQueries({ queryKey: [] });
       }, 1000);
-    },
-  });
+    }
+  }, [isSuccess, queryClient]);
 
   const repay = async (symbol: string, amount: string) => {
     const assetConfig = ConfigService.getAssetConfig(symbol);
