@@ -342,16 +342,16 @@ contract ZenFinancePool is IZenFinancePool, ReentrancyGuard, Ownable, Pausable {
         // Accrue interest first
         _accrueInterest(asset);
         
-        // Get user's borrowed balance
-        uint256 userBorrow = borrowBalances[msg.sender][asset];
+        // Get user's actual borrowed balance including accrued interest
+        uint256 userBorrow = this.getBorrowBalance(msg.sender, asset);
         require(userBorrow > 0, "No borrow balance");
         
-        // For simplicity, allow repaying up to the stored balance
-        // (Interest handling can be improved in future versions)
+        // Determine repayment amount
         if (amount == 0) {
+            // Repay full balance including interest
             repaidAmount = userBorrow;
         } else {
-            require(amount <= userBorrow, "Amount exceeds stored debt");
+            require(amount <= userBorrow, "Amount exceeds debt");
             repaidAmount = amount;
         }
         
@@ -371,8 +371,26 @@ contract ZenFinancePool is IZenFinancePool, ReentrancyGuard, Ownable, Pausable {
             require(token.transferFrom(msg.sender, address(this), repaidAmount), "Transfer failed");
         }
         
+        // Calculate principal and interest portions
+        uint256 principal = borrowBalances[msg.sender][asset];
+        uint256 interest = userBorrow - principal;
+        
+        // Determine how much of repayment goes to principal vs interest
+        uint256 interestPaid;
+        uint256 principalPaid;
+        
+        if (repaidAmount >= interest) {
+            // Repay all interest first, then principal
+            interestPaid = interest;
+            principalPaid = repaidAmount - interest;
+        } else {
+            // Partial repayment only covers some interest
+            interestPaid = repaidAmount;
+            principalPaid = 0;
+        }
+        
         // Update balances
-        borrowBalances[msg.sender][asset] -= repaidAmount;
+        borrowBalances[msg.sender][asset] -= principalPaid;
         totalBorrowed[asset] -= repaidAmount;
         
         // Update borrower count
