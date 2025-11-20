@@ -39,11 +39,6 @@ export default function ComingSoonView({ feature }: ComingSoonViewProps) {
       {/* Coming Soon Card */}
       <div className="max-w-2xl mx-auto mt-16">
         <div className="bg-gradient-to-br from-[#1a2332] to-[#0f1422] rounded-2xl border border-white/10 p-12 text-center shadow-2xl">
-          {/* Animated Icon */}
-          <div className="w-20 h-20 mx-auto mb-8 bg-gradient-to-br from-yellow-400/20 via-green-400/20 to-cyan-400/20 rounded-full flex items-center justify-center border border-green-400/30 animate-pulse-glow">
-            <Sparkles className="w-10 h-10 text-green-400" />
-          </div>
-          
           {/* Main Content */}
           <h2 className="text-3xl font-bold text-white mb-6">
             {feature} Coming Soon!
