@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+:root {
+  --zf-bg: #0a0e27;
+  --zf-bg-soft: #111739;
+  --zf-surface: rgba(255, 255, 255, 0.04);
+  --zf-border: rgba(255, 255, 255, 0.1);
+  --zf-text: #f8fafc;
+  --zf-muted: #94a3b8;
+  --zf-yellow: #facc15;
+  --zf-green: #22c55e;
+  --zf-cyan: #06b6d4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  color: var(--zf-text);
+  background:
+    radial-gradient(circle at 20% -5%, rgba(250, 204, 21, 0.18), transparent 32%),
+    radial-gradient(circle at 90% 0%, rgba(6, 182, 212, 0.18), transparent 34%),
+    linear-gradient(180deg, var(--zf-bg-soft) 0%, var(--zf-bg) 44%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.zen-shell {
+  min-height: 100vh;
+  padding: 24px 16px 32px;
+}
+
+.zen-container {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1280px;
+}
+
+.zen-card {
+  border: 1px solid var(--zf-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+}
+
+.zen-gradient-text {
+  background: linear-gradient(90deg, var(--zf-yellow), var(--zf-green), var(--zf-cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.zen-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.kpi-grid {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.chart-grid {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.table-grid {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .zen-shell {
+    padding: 32px 24px 40px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1120px) {
+  .kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
